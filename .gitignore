@@ -12,3 +12,4 @@ venv/
 *.synctex.gz
 build/
 dist/
+projects/
