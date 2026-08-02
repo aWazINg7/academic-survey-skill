@@ -1,0 +1,51 @@
+schema_version: "1.0"
+
+project:
+  name: {{PROJECT_NAME}}
+  topic: {{TOPIC}}
+  target_journal: {{TARGET_JOURNAL}}
+  created_at: {{CREATED_AT}}
+
+scope:
+  date_range:
+    from_year: {{FROM_YEAR}}
+    to_year: {{TO_YEAR}}
+  languages:
+{{LANGUAGES}}
+  research_questions: []
+  inclusion_criteria:
+    - "与综述主题或研究问题直接相关"
+    - "题名、作者、年份和来源可以核验"
+  exclusion_criteria:
+    - "重复记录或已有正式发表版本的重复预印本"
+    - "无法支持任何综述研究问题"
+
+retrieval:
+  enabled_sources:
+{{SOURCES}}
+  queries: []
+  retrieved_at: null
+  max_results_per_source: 100
+  audit_log: "protocol/search_log.jsonl"
+  raw_data_directory: "data/raw"
+  cleaned_table: "data/cleaned/literature.csv"
+  cache_ttl_hours: 168
+
+screening:
+  stages:
+    - "title"
+    - "abstract"
+    - "fulltext"
+  require_exclusion_reason: true
+
+evidence:
+  levels:
+    metadata: "仅核验元数据，不支持关键技术判断"
+    partial_fulltext: "核验与论断直接相关的章节、公式、图表或实验"
+    fulltext: "完整阅读全文并核验主要论断"
+  minimum_level_for_technical_claims: "partial_fulltext"
+  require_page_or_section: true
+
+outputs:
+  manuscript_format: "latex"
+  bibliography_style: "unsrtnat"

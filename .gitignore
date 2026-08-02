@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.cache/
 .DS_Store
 *.aux
 *.bbl
@@ -12,3 +13,4 @@ venv/
 *.synctex.gz
 build/
 dist/
+projects/

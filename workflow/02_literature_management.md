@@ -2,67 +2,50 @@
 
 ## 目标
 
-将检索结果整理为可追踪、可去重、可审计的综述证据库，避免后期出现重复引用、信息冲突和“凭印象写作”。
+把 `data/raw/` 中的多源规范记录合并为可追踪、可去重、可审计的文献库，同时保留互补元数据和冲突，不因选中一条“主记录”而丢失其他来源。
 
-## 必备字段
+## 规范字段
 
-每篇文献至少记录：
+字段分为三组：
 
-- title
-- authors
-- year
-- venue
-- doi
-- url
-- abstract
-- keywords
-- method_family
-- research_problem
-- core_idea
-- evaluation_setting
-- main_findings
-- limitations
-- evidence_level
-- citation_status
+- 书目信息：`title`、`authors`、`year`、`publication_date`、`venue`、`publication_type`、卷期页、DOI、arXiv ID、URL、摘要、关键词与主题；
+- 溯源信息：`source`、`source_id`、`source_url`、`retrieval_id`、`retrieved_at`、`search_query`、`search_rank` 和 `metadata_status`；
+- 人工分析信息：研究问题、核心思想、方法族、信任/威胁模型、数据集、指标、发现、局限、证据等级和文献角色。
 
-## 去重规则
+检索与导入脚本只填写书目和溯源字段，不从元数据自动生成技术结论。
 
-按以下优先级去重：
+## 合并与去重
 
-1. DOI 完全一致
-2. arXiv ID 完全一致
-3. 标题标准化后完全一致
-4. 标题高相似且第一作者、年份一致
+将所有原始表同时传给去重脚本：
 
-保留正式发表版本，预印本作为补充来源，不重复计数。
+```bash
+python scripts/deduplicate_literature.py \
+  projects/<project>/data/raw/openalex.csv \
+  projects/<project>/data/raw/semantic_scholar.csv \
+  projects/<project>/data/raw/crossref.csv \
+  projects/<project>/data/raw/chinese.csv \
+  --output projects/<project>/data/cleaned/literature.csv \
+  --duplicates projects/<project>/data/cleaned/duplicates.csv \
+  --conflicts projects/<project>/data/cleaned/conflicts.csv \
+  --log projects/<project>/protocol/search_log.jsonl
+```
 
-## 文献角色标注
+脚本只把语法合理且完全一致的 DOI 当作强标识，再考虑显式 arXiv ID 和标准化后完全一致的题名，使用连通分组处理传递重复。`N/A`、`-`、`无` 等 DOI 占位值不参与身份判断；弱匹配组内只要出现互斥 DOI、arXiv ID、年份或第一作者就不合并。第一作者比较使用姓和名字 token，同时容许单字母名字缩写；若并非每条记录都有作者证据，刊会冲突也会阻止题名合并。其余分组逐字段补全缺失信息，`source`、来源 ID 和检索运行 ID 取并集。题名、年份、来源刊会、DOI 或 arXiv ID 冲突不会自动覆盖，而是写入 `conflicts.csv` 供人工核验。若不同论文携带相同的输入 `paper_id`，脚本会在写出结果前报错，要求先修正源数据。
 
-- `foundational`：奠基性工作
-- `representative`：典型方法
-- `state_of_the_art`：近期代表性进展
-- `survey`：已有综述
-- `benchmark`：数据集、基准或评价体系
-- `position`：观点、展望或评论性文章
+正式发表版本通常作为主记录，预印本链接和版本信息作为补充来源保留。高相似但不完全相同的题名不自动合并，应由人工结合作者、年份和全文判断。
 
-## 证据等级
+## 人工核验
 
-- A：全文已核验，实验与结论清晰
-- B：正文或官方元数据已核验
-- C：仅摘要或二手来源
+1. 阅读 `duplicates.csv` 的 `duplicate_of` 与 `matched_on`；
+2. 逐项处理 `conflicts.csv`，必要时回查 Crossref、DBLP 或出版方页面；
+3. 将确认后的 `data/cleaned/literature.csv` 复制或审阅合并进 `evidence/literature.csv`；
+4. 仅在核验正文后填写分析字段和证据等级。
 
-正文中的关键判断优先引用 A 级证据。C 级证据不得支撑核心结论。
-
-## 输出
-
-- `data/literature.csv`
-- `data/literature.bib`
-- `data/evidence_notes/`
-- `reports/coverage_report.md`
+证据等级统一为：`metadata`（仅元数据）、`partial_fulltext`（已核验相关章节/图表/实验）和 `fulltext`（已完整阅读全文）。`metadata` 记录不得支撑关键技术判断。
 
 ## 完成标准
 
-- 无明显重复记录
-- 每条核心结论可追溯到具体文献
-- 经典工作、代表性工作与近三年进展均有覆盖
-- 已有综述与本文拟建分类体系之间的差异已记录
+- 每个合并记录有稳定 `paper_id`，且能回溯所有来源与检索运行；
+- 重复依据和元数据冲突均有独立报告；
+- DOI URL/裸 DOI、arXiv 版本号和传递重复可正确合并；
+- 关键分析结论均绑定论文及页码、章节、图表或其他稳定全文位置。
