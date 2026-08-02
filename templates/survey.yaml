@@ -26,6 +26,10 @@ retrieval:
   queries: []
   retrieved_at: null
   max_results_per_source: 100
+  audit_log: "protocol/search_log.jsonl"
+  raw_data_directory: "data/raw"
+  cleaned_table: "data/cleaned/literature.csv"
+  cache_ttl_hours: 168
 
 screening:
   stages:

@@ -258,6 +258,7 @@ def initialize_project(
         (staging / "manuscript/references.bib").write_text(
             f"% Verified references for {project_name}.\n", encoding="utf-8"
         )
+        (staging / "protocol/search_log.jsonl").write_text("", encoding="utf-8")
 
         if target.exists() or target.is_symlink():
             raise FileExistsError(f"project already exists: {target}")
@@ -292,6 +293,13 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     repository_root = Path(__file__).resolve().parents[1]
+    default_sources = (
+        "openalex",
+        "semantic_scholar",
+        "crossref",
+        "dblp",
+        "chinese_import",
+    )
 
     try:
         target = initialize_project(
@@ -303,7 +311,7 @@ def main() -> int:
             from_year=args.from_year,
             to_year=args.to_year,
             languages=args.languages or ("zh", "en"),
-            sources=args.sources or ("openalex",),
+            sources=args.sources or default_sources,
         )
     except (FileExistsError, FileNotFoundError, ValueError, OSError) as exc:
         parser.exit(2, f"error: {exc}\n")

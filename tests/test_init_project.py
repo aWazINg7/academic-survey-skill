@@ -66,6 +66,7 @@ class InitProjectTests(unittest.TestCase):
             expected_files = {
                 "survey.yaml",
                 "protocol/search_protocol.md",
+                "protocol/search_log.jsonl",
                 "evidence/literature.csv",
                 "evidence/evidence_matrix.md",
                 "analysis/taxonomy.md",
@@ -210,6 +211,14 @@ class InitProjectTests(unittest.TestCase):
             topic_line = next(line for line in config.splitlines() if line.startswith("  topic: "))
             self.assertEqual(json.loads(topic_line.split(": ", 1)[1]), topic)
             self.assertIn("target_journal: null", config)
+            for source in (
+                "openalex",
+                "semantic_scholar",
+                "crossref",
+                "dblp",
+                "chinese_import",
+            ):
+                self.assertIn(f'    - "{source}"', config)
             manuscript_path = Path(temp_dir) / "智能体安全综述/manuscript/main.tex"
             manuscript = manuscript_path.read_text(encoding="utf-8")
             self.assertIn(r'\title{图学习 \# 安全: "综述" \{\{SOURCES\}\}}', manuscript)

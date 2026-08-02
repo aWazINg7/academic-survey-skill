@@ -31,14 +31,15 @@ For an existing survey, read `survey.yaml` first. Preserve its scope, date range
 
 1. Read `workflow/00_topic_scoping.md` and define answerable research questions, boundaries, and target venue.
 2. Read `workflow/01_literature_search.md` and complete `protocol/search_protocol.md` before broad retrieval.
-3. Read `workflow/02_literature_management.md`; collect, normalize, version-link, and deduplicate metadata. Use `scripts/openalex_search.py` and `scripts/deduplicate_literature.py` where applicable.
-4. Populate `evidence/literature.csv` and `evidence/evidence_matrix.md`. Bind every analytical claim to one or more papers and a verifiable evidence location.
-5. Read `workflow/03_taxonomy_construction.md`; define one primary classification axis, explicit decision rules, auxiliary labels, overlaps, and counterexamples in `analysis/taxonomy.md`.
-6. Read `workflow/04_research_evolution_analysis.md`; distinguish publication order from evidenced citation or method inheritance in `analysis/timeline.md`.
-7. Read `workflow/05_method_comparison.md`; compare methods under common assumptions, datasets, metrics, and threat or problem models in `analysis/comparison.md`.
-8. Read `workflow/06_challenges_future_directions.md`; derive challenges and future directions from repeated limitations or clearly label them as survey-author inference in `analysis/gaps.md`.
-9. Read `workflow/07_survey_writing.md`; synthesize by question, mechanism, trade-off, and evolution instead of summarizing papers sequentially.
-10. Read `workflow/08_reference_and_quality_check.md`; run `scripts/bib_validator.py`, inspect citation coverage, and use `prompts/reviewer_check.md` before finalizing.
+3. Retrieve each source into `data/raw/` with the exact query and run metadata appended to `protocol/search_log.jsonl`. Use `scripts/openalex_search.py`, `scripts/semantic_scholar_search.py`, and `scripts/crossref_metadata.py search` for English discovery; use `scripts/import_literature.py` for CNKI, Wanfang, or manual CSV/RIS exports. Never place API keys in project files or command arguments.
+4. Read `workflow/02_literature_management.md`; pass all canonical raw CSV files together to `scripts/deduplicate_literature.py`, review both its duplicate and conflict reports, then use Crossref DOI enrichment and `scripts/dblp_validate.py` where applicable. Do not silently overwrite conflicting title, year, venue, or DOI metadata.
+5. Populate `evidence/literature.csv` and `evidence/evidence_matrix.md`. Bind every analytical claim to one or more papers and a verifiable evidence location.
+6. Read `workflow/03_taxonomy_construction.md`; define one primary classification axis, explicit decision rules, auxiliary labels, overlaps, and counterexamples in `analysis/taxonomy.md`.
+7. Read `workflow/04_research_evolution_analysis.md`; distinguish publication order from evidenced citation or method inheritance in `analysis/timeline.md`.
+8. Read `workflow/05_method_comparison.md`; compare methods under common assumptions, datasets, metrics, and threat or problem models in `analysis/comparison.md`.
+9. Read `workflow/06_challenges_future_directions.md`; derive challenges and future directions from repeated limitations or clearly label them as survey-author inference in `analysis/gaps.md`.
+10. Read `workflow/07_survey_writing.md`; synthesize by question, mechanism, trade-off, and evolution instead of summarizing papers sequentially.
+11. Read `workflow/08_reference_and_quality_check.md`; run `scripts/bib_validator.py`, inspect citation coverage, and use `prompts/reviewer_check.md` before finalizing.
 
 Load only the workflow or prompt needed for the current stage. Use `prompts/paper_analysis.md`, `prompts/taxonomy_generation.md`, `prompts/search_strategy.md`, and `prompts/section_synthesis.md` as stage-specific aids, not as substitutes for source verification.
 
@@ -58,7 +59,9 @@ Load only the workflow or prompt needed for the current stage. Use `prompts/pape
 ```text
 projects/<project-name>/
 ├── survey.yaml
-├── protocol/search_protocol.md
+├── protocol/
+│   ├── search_protocol.md
+│   └── search_log.jsonl
 ├── data/{raw,cleaned,screened}/
 ├── evidence/
 │   ├── literature.csv
@@ -77,11 +80,14 @@ projects/<project-name>/
 
 Keep source downloads and exports in `data/raw/`; place normalized records in `data/cleaned/`; place auditable inclusion and exclusion decisions in `data/screened/`.
 
+All retrieval and import scripts emit the same fixed canonical CSV schema, including on zero results. Keep provider classifications in `subjects`, explicit author/database keywords in `keywords`, and citation counts paired with `citation_count_source`. Treat `raw_metadata` as provenance, not evidence for technical claims.
+
 ## Completion gate
 
 Do not call a manuscript complete until:
 
 - the retrieval date, databases, exact queries, and screening decisions are auditable;
+- at least three English metadata sources and one Chinese import source have been considered, or an explicit scope limitation explains why not;
 - duplicate records and preprint or formal-version conflicts are resolved;
 - every major category has clear decision rules and representative works;
 - every major comparison cell has evidence or is marked “未报告”;
